@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Advanced Network Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        body {
+            background: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .card {
+            background-color: #1f1f1f;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0, 255, 153, 0.2);
+        }
+
+        h1,
+        h5 {
+            color: #04965c;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        canvas {
+            background-color: #2a2a2a;
+            border-radius: 15px;
+            padding: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1 class="text-center mb-4">🌐 Advanced Network Dashboard</h1>
+
+        <div class="row gy-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card">
+                    <h5>Network Info (from Browser API)</h5>
+                    <div class="info-item">Effective Connection Type: <span id="effectiveType">N/A</span></div>
+                    <div class="info-item">Downlink (Mbps): <span id="downlink">N/A</span></div>
+                    <div class="info-item">RTT (ms): <span id="rtt">N/A</span></div>
+                    <div class="info-item">Save Data Mode: <span id="saveData">N/A</span></div>
+                    <div class="info-item">Type: <span id="type">N/A</span></div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="card">
+                    <h5>System Info</h5>
+                    <div class="info-item">Device Memory (GB): <span id="deviceMemory">N/A</span></div>
+                    <div class="info-item">Logical CPU Cores: <span id="cpuCores">N/A</span></div>
+                    <div class="info-item" style="word-break: break-word;">User Agent: <span id="userAgent">N/A</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <div class="card">
+                    <h5>Simulated Network Metrics</h5>
+                    <div class="info-item">Download Speed (Mbps): <span id="simDownload">N/A</span></div>
+                    <div class="info-item">Upload Speed (Mbps): <span id="simUpload">N/A</span></div>
+                    <div class="info-item">Ping (ms): <span id="simPing">N/A</span></div>
+                    <div class="info-item">Jitter (ms): <span id="simJitter">N/A</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row gy-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <h5>
+                        Download Speed: <span id="liveDownloadTitle" class="text-success">0</span> Mbps
+                    </h5>
+                    <h5>
+                        Upload Speed: <span id="liveUploadTitle" class="text-primary">0</span> Mbps
+                    </h5>
+                    <canvas id="speedChart" height="240"></canvas>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card">
+                    <h5>
+                        Ping: <span id="livePingTitle" class="text-warning">0</span> ms
+                    </h5>
+                    <h5>
+                        Jitter: <span id="liveJitterTitle" class="text-danger">0</span> ms
+                    </h5>
+                    <canvas id="pingChart" height="240"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row gy-4 mt-3">
+            <div class="col-lg-12">
+                <div class="card">
+                    <h5>Estimated Download Times for Various File Sizes</h5>
+                    <ul id="downloadTimes" class="list-group list-group-flush">
+                        <!-- Filled dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center mt-4 text-muted" style="font-size: 0.85rem;">
+            * Data is from browser APIs where available and simulated metrics updated every second.
+        </p>
+    </div>
+
+    <script>
+        $(function () {
+            // Initialize variables and arrays for charts
+            const maxPoints = 30;
+            const labels = Array(maxPoints).fill('');
+            const simDownloadSpeeds = Array(maxPoints).fill(0);
+            const simUploadSpeeds = Array(maxPoints).fill(0);
+            const simPings = Array(maxPoints).fill(0);
+            const simJitters = Array(maxPoints).fill(0);
+
+            // Create charts
+            const speedCtx = document.getElementById('speedChart').getContext('2d');
+            const pingCtx = document.getElementById('pingChart').getContext('2d');
+
+            const speedChart = new Chart(speedCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Download Speed',
+                            data: simDownloadSpeeds,
+                            borderColor: '#00ff99',
+                            backgroundColor: 'rgba(0, 255, 153, 0.3)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                        },
+                        {
+                            label: 'Upload Speed',
+                            data: simUploadSpeeds,
+                            borderColor: '#3399ff',
+                            backgroundColor: 'rgba(51, 153, 255, 0.3)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    animation: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 150 },
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#00ff99' } },
+                    },
+                },
+            });
+
+            const pingChart = new Chart(pingCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Ping',
+                            data: simPings,
+                            borderColor: '#ffcc00',
+                            backgroundColor: 'rgba(255, 204, 0, 0.3)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                        },
+                        {
+                            label: 'Jitter',
+                            data: simJitters,
+                            borderColor: '#ff6666',
+                            backgroundColor: 'rgba(255, 102, 102, 0.3)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    animation: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 200 },
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#00ff99' } },
+                    },
+                },
+            });
+
+            // Helper: Format seconds nicely
+            function formatSeconds(sec) {
+                if (sec < 60) return sec.toFixed(1) + ' sec';
+                const min = Math.floor(sec / 60);
+                const s = (sec % 60).toFixed(1);
+                return `${min} min ${s} sec`;
+            }
+
+            // Update dashboard data every second
+            setInterval(() => {
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+
+                // Update browser Network Info
+                $('#effectiveType').text(connection.effectiveType || 'N/A');
+                $('#downlink').text(connection.downlink ? connection.downlink.toFixed(2) : 'N/A');
+                $('#rtt').text(connection.rtt ? connection.rtt : 'N/A');
+                $('#saveData').text(connection.saveData ? 'Yes' : 'No');
+                $('#type').text(connection.type || 'N/A');
+
+                // Update system info
+                $('#deviceMemory').text(navigator.deviceMemory || 'N/A');
+                $('#cpuCores').text(navigator.hardwareConcurrency || 'N/A');
+                $('#userAgent').text(navigator.userAgent || 'N/A');
+
+                // Simulate realistic fluctuating network metrics
+                const simDown = (connection.downlink || 10) * (0.7 + Math.random() * 0.6); // Mbps, +/-30%
+                const simUp = simDown * (0.3 + Math.random() * 0.7); // Upload usually slower
+                const simPing = 20 + Math.random() * 80; // ms
+                const simJitter = 5 + Math.random() * 50; // ms
+
+                $('#simDownload').text(simDown.toFixed(2));
+                $('#simUpload').text(simUp.toFixed(2));
+                $('#simPing').text(simPing.toFixed(1));
+                $('#simJitter').text(simJitter.toFixed(1));
+
+                // Update titles with separated live values
+                $('#liveDownloadTitle').text(simDown.toFixed(2));
+                $('#liveUploadTitle').text(simUp.toFixed(2));
+                $('#livePingTitle').text(simPing.toFixed(1));
+                $('#liveJitterTitle').text(simJitter.toFixed(1));
+
+                // Push to arrays, drop oldest
+                simDownloadSpeeds.push(simDown);
+                simDownloadSpeeds.shift();
+                simUploadSpeeds.push(simUp);
+                simUploadSpeeds.shift();
+                simPings.push(simPing);
+                simPings.shift();
+                simJitters.push(simJitter);
+                simJitters.shift();
+
+                speedChart.update();
+                pingChart.update();
+
+                // Update download time estimates for files
+                const fileSizesMB = [1, 10, 100, 500, 1024]; // MB
+                const $list = $('#downloadTimes');
+                $list.empty();
+                fileSizesMB.forEach(size => {
+                    // Calculate time = file size (MB) / speed (MB/s) (note: 1 Mbps = 0.125 MBps)
+                    const speedMBps = simDown * 0.125;
+                    const timeSec = speedMBps > 0 ? size / speedMBps : 0;
+                    $list.append(`<li class="list-group-item bg-dark text-light d-flex justify-content-between">
+        <span><strong>${size >= 1024 ? (size / 1024).toFixed(1) + ' GB' : size + ' MB'}</strong> file</span>
+        <span>${formatSeconds(timeSec)}</span>
+      </li>`);
+                });
+
+            }, 1000);
+        });
+    </script>
+
+</body>
+
+</html>
