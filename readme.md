@@ -7,13 +7,14 @@
 
 ## 🚀 Live Demo
 
-🟢 [View Live Dashboard (via GitHub Pages / Codepen / Netlify)](https://your-demo-link.com)
+🟢 [Click here to open the dashboard](https://ahsanjuly29.github.io/InternetSpeedMeter/)
 
 ---
 
 ## 📸 Screenshot
 
-<img src="https://your-screenshot-link.com/dashboard.png" alt="Dashboard Preview" width="100%">
+<!-- Replace the link below with your actual screenshot image URL -->
+<img src="https://ahsanjuly29.github.io/InternetSpeedMeter/ism.png" alt="Dashboard Preview" width="100%">
 
 ---
 
@@ -23,8 +24,8 @@
   <li>📡 Browser Network Info via Network Information API</li>
   <li>💻 System Info (CPU cores, memory, user agent)</li>
   <li>📊 Simulated Download/Upload speeds + Ping/Jitter</li>
-  <li>📈 Real-time Charts (Chart.js)</li>
-  <li>⏱️ File Download Time Estimations</li>
+  <li>📈 Real-time Charts with Chart.js</li>
+  <li>⏱️ Estimated Download Times for Common File Sizes</li>
 </ul>
 
 ---
@@ -53,21 +54,22 @@
 <details>
 <summary><strong>Click to expand</strong></summary>
 
-- Uses `navigator.connection` to get:
+- Uses `navigator.connection` (Network Information API) to get:
   - Effective connection type
   - Downlink (Mbps)
   - Round-trip time (RTT)
-  - Data-saving preferences
-- Pulls CPU and memory info via `navigator.hardwareConcurrency` and `navigator.deviceMemory`
-- Simulates fluctuating speeds every second
-- Charts are live-updated with Chart.js
-- Download time estimates are based on simulated speeds (1MB - 1GB)
+  - Save Data setting
+- Pulls device memory and logical CPU cores using:
+  - `navigator.deviceMemory`
+  - `navigator.hardwareConcurrency`
+- Simulates realistic fluctuating values for:
+  - Download speed
+  - Upload speed
+  - Ping
+  - Jitter
+- Real-time data visualized using Chart.js line graphs
+- Estimated download times are calculated based on simulated speeds (1MB to 1GB)
 
 </details>
 
 ---
-
-## 📦 Usage 🚀 Live Demo
-
-🔗 [Click here to open the dashboard](https://yourusername.github.io/network-dashboard/)
-
